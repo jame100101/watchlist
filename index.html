@@ -1,24 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎬 我的高级影视清单</title>
+    <meta name="description" content="个人电影观影清单管理工具，支持多主题、笔记、评分等功能">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Poppins:wght@400;600;800&family=Playfair+Display:wght@700;800&family=Space+Mono:wght@400;700&family=Outfit:wght@400;600;800&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Poppins:wght@400;600;800&family=Playfair+Display:wght@700;800&family=Space+Mono:wght@400;700&family=Outfit:wght@400;600;800&family=Fredoka:wght@400;600;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <header>
         <div class="header-top">
-            <h1 class="main-title">WATCHLIST</h1>
+            <h1 class="main-title" data-i18n="mainTitle">WATCHLIST</h1>
             <div class="controls-group">
-                <button class="theme-toggle" onclick="toggleThemeSelector()" title="切换主题">🎨</button>
-                <button class="font-toggle" onclick="toggleFontSelector()" title="切换字体">✍️</button>
-                <button class="lang-toggle" onclick="toggleLangSelector()" title="切换语言">🌐</button>
+                <button class="theme-toggle" onclick="toggleThemeSelector()" title="切换主题 (🎨)">🎨</button>
+                <button class="font-toggle" onclick="toggleFontSelector()" title="切换字体 (✍️)">✍️</button>
+                <button class="lang-toggle" onclick="toggleLangSelector()" title="切换语言 (🌐)">🌐</button>
+                <button class="settings-toggle" onclick="toggleSettings()" title="设置 (⚙️)">⚙️</button>
             </div>
             <div id="themeSelector" class="theme-selector hidden">
                 <button class="theme-btn theme-netflix" onclick="changeTheme('netflix')" title="Netflix Red"></button>
-                <button class="theme-btn theme-midnight" onclick="changeTheme('midnight')" title="Midnight Blue"></button>
+                <button class="theme-btn theme-midnight" onclick="changeTheme('midnight')"
+                    title="Midnight Blue"></button>
                 <button class="theme-btn theme-royal" onclick="changeTheme('royal')" title="Royal Purple"></button>
                 <button class="theme-btn theme-forest" onclick="changeTheme('forest')" title="Forest Green"></button>
                 <button class="theme-btn theme-ocean" onclick="changeTheme('ocean')" title="Ocean Teal"></button>
@@ -30,7 +37,8 @@
             <div id="fontSelector" class="font-selector hidden">
                 <button class="font-btn font-inter" onclick="changeFont('inter')" title="Inter - 现代简洁">Aa</button>
                 <button class="font-btn font-poppins" onclick="changeFont('poppins')" title="Poppins - 圆润活力">Aa</button>
-                <button class="font-btn font-playfair" onclick="changeFont('playfair')" title="Playfair Display - 优雅精致">Aa</button>
+                <button class="font-btn font-playfair" onclick="changeFont('playfair')"
+                    title="Playfair Display - 优雅精致">Aa</button>
                 <button class="font-btn font-space" onclick="changeFont('space')" title="Space Mono - 未来科技">Aa</button>
                 <button class="font-btn font-outfit" onclick="changeFont('outfit')" title="Outfit - 炫彩未来">Aa</button>
                 <button class="font-btn font-fredoka" onclick="changeFont('fredoka')" title="Fredoka - 柔和友好">Aa</button>
@@ -40,36 +48,217 @@
                 <button class="lang-btn lang-cn" onclick="changeLang('cn')" title="中文">中</button>
                 <button class="lang-btn lang-both" onclick="changeLang('both')" title="双语">双</button>
             </div>
-            <div class="opacity-control">
-                <label for="opacitySlider" class="opacity-label">透明度</label>
-                <input type="range" id="opacitySlider" class="opacity-slider" min="0" max="100" value="100" oninput="adjustUIOpacity(this.value)">
-                <span class="opacity-value" id="opacityValue">100%</span>
+            <div id="settingsPanel" class="settings-panel hidden">
+                <div class="settings-section">
+                    <h3>⚙️ 设置</h3>
+                    <div class="opacity-control">
+                        <label for="opacitySlider" class="opacity-label">透明度</label>
+                        <input type="range" id="opacitySlider" class="opacity-slider" min="0" max="100" value="100"
+                            oninput="adjustUIOpacity(this.value)">
+                        <span class="opacity-value" id="opacityValue">100%</span>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3 data-i18n="dataManagement">📊 数据管理</h3>
+                    <button class="settings-btn" onclick="exportData()" title="导出数据 (Ctrl+E)">
+                        <span>📤</span> <span data-i18n="exportData">导出数据</span>
+                    </button>
+                    <button class="settings-btn" onclick="importData()">
+                        <span>📥</span> <span data-i18n="importData">导入数据</span>
+                    </button>
+                    <button class="settings-btn danger" onclick="clearAllData()">
+                        <span>🗑️</span> <span data-i18n="clearData">清空数据</span>
+                    </button>
+                </div>
+                <div class="settings-section">
+                    <h3 data-i18n="cloudSync">☁️ 云端同步</h3>
+                    <div class="cloud-sync-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="cloudSyncToggle" onchange="toggleCloudSync()">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text" data-i18n="enableCloudSync">启用云同步</span>
+                        </label>
+                    </div>
+                    <div class="sync-status" id="syncStatus" data-i18n="neverSync">上次同步: 从未同步</div>
+                    <button class="settings-btn" onclick="syncNow(event)">
+                        <span>🔄</span> <span data-i18n="syncNow">立即同步</span>
+                    </button>
+                    <button class="settings-btn" onclick="restoreFromCloud()">
+                        <span>📥</span> <span data-i18n="restoreFromCloud">从云端恢复</span>
+                    </button>
+                    <button class="settings-btn" onclick="openCloudSyncSettings()">
+                        <span>⚙️</span> <span data-i18n="cloudSyncSettings">云同步设置</span>
+                    </button>
+                </div>
+                <div class="settings-section">
+                    <h3 data-i18n="shortcuts">⌨️ 快捷键</h3>
+                    <div class="shortcuts-list">
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>K</kbd>
+                            <span data-i18n="focusSearch">聚焦搜索</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>E</kbd>
+                            <span data-i18n="exportDataShortcut">导出数据</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>ESC</kbd>
+                            <span data-i18n="closePopup">关闭弹窗</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
+    <!-- 统计面板 -->
+    <div class="stats-panel">
+        <div class="stat-card">
+            <div class="stat-value" id="totalCount">0</div>
+            <div class="stat-label" data-i18n="statTotal">总计</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="watchedCount">0</div>
+            <div class="stat-label" data-i18n="statWatched">已看</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="watchingCount">0</div>
+            <div class="stat-label" data-i18n="statWatching">在看</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="unwatchedCount">0</div>
+            <div class="stat-label" data-i18n="statUnwatched">想看</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">★ <span id="avgRating">0</span></div>
+            <div class="stat-label" data-i18n="statAvgRating">平均评分</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">❤️ <span id="avgUserRating">-</span></div>
+            <div class="stat-label" data-i18n="statMyRating">我的评分</div>
+        </div>
+    </div>
+
     <div class="search-box">
-        <input type="text" id="movieInput" placeholder="搜索电影或电视剧名称..." onkeyup="handleSearchInput(event)" onkeydown="handleSearchKeydown(event)">
-        <button onclick="searchAndAdd()">添加记录</button>
+        <input type="text" id="movieInput" placeholder="搜索电影或电视剧名称... (Ctrl+K)"
+            data-i18n-placeholder="searchPlaceholder" onkeyup="handleSearchInput(event)"
+            onkeydown="handleSearchKeydown(event)">
+        <button onclick="searchAndAdd()" data-i18n="addBtn">添加记录</button>
         <div id="searchSuggestions" class="search-suggestions hidden"></div>
     </div>
 
+    <!-- 筛选按钮 -->
+    <div class="filter-controls">
+        <button class="filter-btn filter-all active" onclick="filterMovies('all')" data-i18n="filterAll">全部</button>
+        <button class="filter-btn filter-unwatched" onclick="filterMovies('unwatched')" data-i18n="filterUnwatched">👁️
+            想看</button>
+        <button class="filter-btn filter-watching" onclick="filterMovies('watching')" data-i18n="filterWatching">▶️
+            在看</button>
+        <button class="filter-btn filter-watched" onclick="filterMovies('watched')" data-i18n="filterWatched">✓
+            已看</button>
+    </div>
+
     <div class="sort-controls">
-        <button class="sort-btn" onclick="sortMovies('release', 'desc')">最新年代</button>
-        <button class="sort-btn" onclick="sortMovies('release', 'asc')">最早年代</button>
-        <button class="sort-btn" onclick="sortMovies('rating', 'desc')">评分最高</button>
+        <button class="sort-btn" onclick="sortMovies('added', 'desc')" data-i18n="sortAdded">最新添加</button>
+        <button class="sort-btn" onclick="sortMovies('release', 'desc')" data-i18n="sortReleaseNew">最新年代</button>
+        <button class="sort-btn" onclick="sortMovies('release', 'asc')" data-i18n="sortReleaseOld">最早年代</button>
+        <button class="sort-btn" onclick="sortMovies('rating', 'desc')" data-i18n="sortRating">评分最高</button>
+        <button class="sort-btn" onclick="sortMovies('userRating', 'desc')" data-i18n="sortUserRating">我的最爱</button>
     </div>
 
     <div id="movie-grid" class="movie-grid"></div>
 
+    <!-- 电影详情模态框 -->
     <div id="movieModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <div id="modal-body">
-                </div>
+            <div id="modal-body"></div>
         </div>
     </div>
 
+    <!-- 笔记模态框 -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn" onclick="closeNoteModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="noteModalTitle">添加笔记</h2>
+            </div>
+            <div class="modal-form">
+                <textarea id="noteTextarea" placeholder="写下你的观影感受、评论或任何想记录的内容..." rows="8"></textarea>
+                <div class="modal-actions-row">
+                    <button class="cancel-btn" onclick="closeNoteModal()">取消</button>
+                    <button class="save-btn" id="saveNoteBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 评分模态框 -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn" onclick="closeRatingModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="ratingModalTitle">添加评分</h2>
+            </div>
+            <div class="modal-form">
+                <div class="rating-input">
+                    <div class="rating-display">
+                        <span class="rating-stars">⭐</span>
+                        <span class="rating-number" id="ratingValue">5</span>
+                        <span class="rating-max">/ 10</span>
+                    </div>
+                    <input type="range" id="ratingSlider" min="0" max="10" step="0.5" value="5" class="rating-slider">
+                </div>
+                <div class="modal-actions-row">
+                    <button class="cancel-btn" onclick="closeRatingModal()">取消</button>
+                    <button class="save-btn" id="saveRatingBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 云同步设置模态框 -->
+    <div id="cloudSyncModal" class="modal">
+        <div class="modal-content small-modal">
+            <span class="close-btn" onclick="closeCloudSyncModal()">&times;</span>
+            <div class="modal-header">
+                <h2>☁️ 云同步设置</h2>
+            </div>
+            <div class="modal-form">
+                <div class="cloud-provider-section">
+                    <h3>存储方式</h3>
+                    <div class="provider-info">
+                        <div class="provider-item">
+                            <div class="provider-name">📦 浏览器本地云存储</div>
+                            <div class="provider-desc">使用 IndexedDB 在浏览器中存储备份（默认）</div>
+                            <div class="provider-status">✅ 已启用</div>
+                        </div>
+                        <div class="provider-item">
+                            <div class="provider-name">🐙 GitHub Gist</div>
+                            <div class="provider-desc">使用 GitHub Gist 存储备份（需要配置）</div>
+                            <button class="config-btn" onclick="configureGitHub()">配置 GitHub</button>
+                            <button class="config-btn danger" onclick="clearGitHubConfig()">清除配置</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sync-info">
+                    <h3>同步说明</h3>
+                    <ul>
+                        <li>启用云同步后，每5分钟自动同步一次</li>
+                        <li>浏览器本地云存储：数据存储在浏览器的 IndexedDB 中</li>
+                        <li>GitHub Gist：需要配置 Personal Access Token</li>
+                        <li>建议同时使用导出功能定期备份到本地文件</li>
+                    </ul>
+                </div>
+                <div class="modal-actions-row">
+                    <button class="cancel-btn" onclick="closeCloudSyncModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="cloud-storage.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
