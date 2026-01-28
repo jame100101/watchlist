@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 我的高级影视清单</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Poppins:wght@400;600;800&family=Playfair+Display:wght@700;800&family=Space+Mono:wght@400;700&family=Outfit:wght@400;600;800&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1 class="main-title">WATCHLIST</h1>
+            <div class="controls-group">
+                <button class="theme-toggle" onclick="toggleThemeSelector()" title="切换主题">🎨</button>
+                <button class="font-toggle" onclick="toggleFontSelector()" title="切换字体">✍️</button>
+                <button class="lang-toggle" onclick="toggleLangSelector()" title="切换语言">🌐</button>
+            </div>
+            <div id="themeSelector" class="theme-selector hidden">
+                <button class="theme-btn theme-netflix" onclick="changeTheme('netflix')" title="Netflix Red"></button>
+                <button class="theme-btn theme-midnight" onclick="changeTheme('midnight')" title="Midnight Blue"></button>
+                <button class="theme-btn theme-royal" onclick="changeTheme('royal')" title="Royal Purple"></button>
+                <button class="theme-btn theme-forest" onclick="changeTheme('forest')" title="Forest Green"></button>
+                <button class="theme-btn theme-ocean" onclick="changeTheme('ocean')" title="Ocean Teal"></button>
+                <button class="theme-btn theme-light" onclick="changeTheme('light')" title="Light - 纯净白"></button>
+                <button class="theme-btn theme-soft" onclick="changeTheme('soft')" title="Soft - 柔和米色"></button>
+                <button class="theme-btn theme-sky" onclick="changeTheme('sky')" title="Sky - 浅蓝"></button>
+                <button class="theme-btn theme-rose" onclick="changeTheme('rose')" title="Rose - 玫瑰粉"></button>
+            </div>
+            <div id="fontSelector" class="font-selector hidden">
+                <button class="font-btn font-inter" onclick="changeFont('inter')" title="Inter - 现代简洁">Aa</button>
+                <button class="font-btn font-poppins" onclick="changeFont('poppins')" title="Poppins - 圆润活力">Aa</button>
+                <button class="font-btn font-playfair" onclick="changeFont('playfair')" title="Playfair Display - 优雅精致">Aa</button>
+                <button class="font-btn font-space" onclick="changeFont('space')" title="Space Mono - 未来科技">Aa</button>
+                <button class="font-btn font-outfit" onclick="changeFont('outfit')" title="Outfit - 炫彩未来">Aa</button>
+                <button class="font-btn font-fredoka" onclick="changeFont('fredoka')" title="Fredoka - 柔和友好">Aa</button>
+            </div>
+            <div id="langSelector" class="lang-selector hidden">
+                <button class="lang-btn lang-en" onclick="changeLang('en')" title="English">EN</button>
+                <button class="lang-btn lang-cn" onclick="changeLang('cn')" title="中文">中</button>
+                <button class="lang-btn lang-both" onclick="changeLang('both')" title="双语">双</button>
+            </div>
+            <div class="opacity-control">
+                <label for="opacitySlider" class="opacity-label">透明度</label>
+                <input type="range" id="opacitySlider" class="opacity-slider" min="0" max="100" value="100" oninput="adjustUIOpacity(this.value)">
+                <span class="opacity-value" id="opacityValue">100%</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="movieInput" placeholder="搜索电影或电视剧名称..." onkeyup="handleSearchInput(event)" onkeydown="handleSearchKeydown(event)">
+        <button onclick="searchAndAdd()">添加记录</button>
+        <div id="searchSuggestions" class="search-suggestions hidden"></div>
+    </div>
+
+    <div class="sort-controls">
+        <button class="sort-btn" onclick="sortMovies('release', 'desc')">最新年代</button>
+        <button class="sort-btn" onclick="sortMovies('release', 'asc')">最早年代</button>
+        <button class="sort-btn" onclick="sortMovies('rating', 'desc')">评分最高</button>
+    </div>
+
+    <div id="movie-grid" class="movie-grid"></div>
+
+    <div id="movieModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div id="modal-body">
+                </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
