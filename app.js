@@ -119,7 +119,41 @@ async function searchAndAdd() {
             const resEn = await fetch(`${CONFIG.BASE_URL}/movie/${movieId}?api_key=${CONFIG.API_KEY}&language=en-US`);
             const movieEn = await resEn.json();
 
-            // 3. 构造保存对象
+            // 3. 获取预告片信息 - 尝试多个语言和类型
+            let trailerKey = null;
+            
+            // 先尝试英文预告片
+            const resVideosEn = await fetch(`${CONFIG.BASE_URL}/movie/${movieId}/videos?api_key=${CONFIG.API_KEY}&language=en-US`);
+            const videosDataEn = await resVideosEn.json();
+            
+            if (videosDataEn.results && videosDataEn.results.length > 0) {
+                // 优先找 Trailer，其次找 Teaser
+                const trailer = videosDataEn.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                const teaser = videosDataEn.results.find(v => v.type === 'Teaser' && v.site === 'YouTube');
+                const officialVideo = videosDataEn.results.find(v => v.type === 'Clip' && v.site === 'YouTube');
+                
+                trailerKey = trailer?.key || teaser?.key || officialVideo?.key || null;
+            }
+            
+            // 如果没找到，尝试中文预告片
+            if (!trailerKey) {
+                try {
+                    const resVideosCn = await fetch(`${CONFIG.BASE_URL}/movie/${movieId}/videos?api_key=${CONFIG.API_KEY}&language=zh-CN`);
+                    const videosDataCn = await resVideosCn.json();
+                    
+                    if (videosDataCn.results && videosDataCn.results.length > 0) {
+                        const trailer = videosDataCn.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                        const teaser = videosDataCn.results.find(v => v.type === 'Teaser' && v.site === 'YouTube');
+                        trailerKey = trailer?.key || teaser?.key || null;
+                    }
+                } catch (e) {
+                    console.log("获取中文预告片失败，使用英文版本");
+                }
+            }
+            
+            console.log(`电影: ${movieCn.title}, 预告片KEY: ${trailerKey}`);
+
+            // 4. 构造保存对象
             const movieData = {
                 id: movieId,
                 titleCn: movieCn.title,
@@ -130,7 +164,8 @@ async function searchAndAdd() {
                 releaseDate: movieCn.release_date || '未知',
                 releaseYear: movieCn.release_date ? movieCn.release_date.split('-')[0] : '未知',
                 overviewCn: movieCn.overview || "暂无中文简介",
-                overviewEn: movieEn.overview || "No description available."
+                overviewEn: movieEn.overview || "No description available.",
+                trailerKey: trailerKey
             };
 
             myMovies.push(movieData);
@@ -264,18 +299,34 @@ function renderMovies() {
             titleEnDisplay = `<span class="title-en">${movie.titleEn}</span>`;
         }
         
+        const trailerHtml = movie.trailerKey ? `
+            <div class="preview-player">
+                <button class="play-btn" onclick="event.stopPropagation(); playTrailer('${movie.trailerKey}', '${movie.titleCn}')">▶ 播放预告</button>
+            </div>
+        ` : '';
+        
         return `
         <div class="movie-card" onclick="openDetails(${movie.id}, ${originalIndex})">
             <img src="${movie.poster}" alt="${movie.titleCn}">
+            ${trailerHtml}
             <div class="info">
                 <div class="rating">★ ${movie.rating.toFixed(1)}</div>
                 <h3>${titleDisplay}</h3>
                 ${titleEnDisplay}
                 <div class="release-year">📅 ${movie.releaseYear}</div>
-                <button class="delete-btn" onclick="event.stopPropagation(); deleteMovie(${originalIndex})">移除记录</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteMovie(${originalIndex})" title="移除此电影">✕</button>
             </div>
         </div>
     `}).join('');
+}
+
+function playTrailer(trailerKey, titleCn) {
+    // 从 myMovies 中找到对应的电影
+    const movie = myMovies.find(m => m.titleCn === titleCn);
+    if (movie) {
+        const index = myMovies.indexOf(movie);
+        openDetails(movie.id, index);
+    }
 }
 
 function openDetails(movieId, index) {
@@ -295,6 +346,14 @@ function openDetails(movieId, index) {
                 <p class="title-en-sub" style="font-size: 1.2rem; opacity: 0.7;">${movie.titleEn}</p>
             </div>
         </div>
+        ${movie.trailerKey ? `
+        <div class="modal-trailer-section">
+            <h5>预告片</h5>
+            <div class="modal-player-container">
+                <iframe width="100%" height="400" src="https://www.youtube.com/embed/${movie.trailerKey}?autoplay=0&controls=1&rel=0&modestbranding=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+        ` : ''}
         <div class="modal-info-section">
             <div class="desc-group">
                 <h5>剧情简介 · · ·</h5>
