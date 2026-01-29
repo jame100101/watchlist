@@ -13,6 +13,7 @@
 </head>
 
 <body>
+
     <header>
         <div class="header-top">
             <h1 class="main-title" data-i18n="mainTitle">WATCHLIST</h1>
@@ -140,9 +141,8 @@
     </div>
 
     <div class="search-box">
-        <input type="text" id="movieInput" placeholder="搜索电影或电视剧名称... (Ctrl+K)"
-            data-i18n-placeholder="searchPlaceholder" onkeyup="handleSearchInput(event)"
-            onkeydown="handleSearchKeydown(event)">
+        <input type="text" id="movieInput" placeholder="搜索电影..." data-i18n-placeholder="searchPlaceholder"
+            onkeyup="handleSearchInput(event)" onkeydown="handleSearchKeydown(event)">
         <button onclick="searchAndAdd()" data-i18n="addBtn">添加记录</button>
         <div id="searchSuggestions" class="search-suggestions hidden"></div>
     </div>
@@ -256,6 +256,8 @@
             </div>
         </div>
     </div>
+
+
 
     <script src="cloud-storage.js"></script>
     <script src="app.js"></script>

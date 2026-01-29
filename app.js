@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFilterButtons();
     updateStats();
 
+
     // 添加键盘快捷键
     document.addEventListener('keydown', handleKeyboardShortcuts);
 });
@@ -266,8 +267,6 @@ async function searchAndAdd() {
             // 3. 获取预告片信息
             let trailerKey = await getTrailerKey(movieId);
 
-            console.log(`电影: ${movieCn.title}, 预告片KEY: ${trailerKey}`);
-
             // 4. 构造保存对象
             const movieData = {
                 id: movieId,
@@ -281,9 +280,8 @@ async function searchAndAdd() {
                 overviewCn: movieCn.overview || "暂无中文简介",
                 overviewEn: movieEn.overview || "No description available.",
                 trailerKey: trailerKey,
-                // 新增字段
                 userRating: 0,
-                watchStatus: 'unwatched', // unwatched, watching, watched
+                watchStatus: 'unwatched',
                 notes: '',
                 tags: [],
                 addedDate: new Date().toISOString(),
@@ -422,27 +420,95 @@ function updateSuggestionSelection(items) {
 
 function selectSuggestion(index) {
     const movie = searchSuggestions[parseInt(index)];
+    if (movie) {
+        addMovie(movie.id);
+    }
+}
+
+async function addMovie(movieId) {
     const input = document.getElementById('movieInput');
-    input.value = movie.title;
     hideSuggestions();
-    searchAndAdd();
+    setLoading(true);
+
+    try {
+        // 1. 获取中文信息
+        const resCn = await fetch(`${CONFIG.BASE_URL}/movie/${movieId}?api_key=${CONFIG.API_KEY}&language=zh-CN`);
+        const movieCn = await resCn.json();
+
+        // 去重逻辑
+        if (myMovies.some(m => m.id === movieId)) {
+            showNotification("此电影已在清单中！", "warning");
+            input.value = '';
+            setLoading(false);
+            return;
+        }
+
+        // 2. 获取英文信息
+        const resEn = await fetch(`${CONFIG.BASE_URL}/movie/${movieId}?api_key=${CONFIG.API_KEY}&language=en-US`);
+        const movieEn = await resEn.json();
+
+        // 3. 获取预告片信息
+        let trailerKey = await getTrailerKey(movieId);
+
+        // 4. 构造保存对象
+        const movieData = {
+            id: movieId,
+            titleCn: movieCn.title,
+            titleEn: movieEn.title,
+            poster: CONFIG.IMG_URL + movieCn.poster_path,
+            backdrop: movieCn.backdrop_path,
+            rating: movieCn.vote_average,
+            releaseDate: movieCn.release_date || '未知',
+            releaseYear: movieCn.release_date ? movieCn.release_date.split('-')[0] : '未知',
+            overviewCn: movieCn.overview || "暂无中文简介",
+            overviewEn: movieEn.overview || "No description available.",
+            trailerKey: trailerKey,
+            userRating: 0,
+            watchStatus: 'unwatched',
+            notes: '',
+            tags: [],
+            addedDate: new Date().toISOString(),
+            watchedDate: null
+        };
+
+        myMovies.push(movieData);
+        saveMovies();
+        renderMovies();
+        updateStats();
+        input.value = '';
+        showNotification(`已添加《${movieCn.title}》`, "success");
+
+    } catch (e) {
+        console.error("添加电影出错", e);
+        showNotification("添加电影出错，请稍后重试", "error");
+    } finally {
+        setLoading(false);
+    }
 }
 
 function showSuggestions() {
-    const suggestionsDiv = document.getElementById('searchSuggestions');
-    suggestionsDiv.innerHTML = searchSuggestions.map((movie, index) => {
-        const poster = movie.poster_path ? CONFIG.IMG_URL + movie.poster_path : '';
-        const year = movie.release_date ? movie.release_date.split('-')[0] : '未知';
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    if (searchSuggestions.length === 0) {
+        suggestionsContainer.classList.add('hidden');
+        return;
+    }
+
+    suggestionsContainer.innerHTML = searchSuggestions.map((sm, index) => {
+        const poster = sm.poster_path ? CONFIG.IMG_URL + sm.poster_path : 'https://via.placeholder.com/45x68?text=No+Img';
+        const date = sm.release_date ? sm.release_date.split('-')[0] : 'N/A';
+        const isSelected = index === selectedSuggestionIndex ? 'selected' : '';
+
         return `
-            <div class="suggestion-item" data-index="${index}" onclick="selectSuggestion(${index})">
-                ${poster ? `<img src="${poster}" alt="${movie.title}" class="suggestion-poster">` : ''}
-                <div class="suggestion-text">${movie.title}</div>
-                <div class="suggestion-year">${year}</div>
+        <div class="suggestion-item ${isSelected}" onclick="addMovie(${sm.id})">
+            <img src="${poster}" class="suggestion-poster" alt="${sm.title}">
+            <div class="suggestion-info">
+                <div class="suggestion-title">${sm.title}</div>
+                <div class="suggestion-meta">${date} · ${sm.media_type === 'tv' ? '剧集' : '电影'}</div>
             </div>
-        `;
+        </div>
+    `;
     }).join('');
-    suggestionsDiv.classList.remove('hidden');
-    selectedSuggestionIndex = -1;
+    suggestionsContainer.classList.remove('hidden');
 }
 
 function hideSuggestions() {
@@ -496,9 +562,10 @@ function renderMovies() {
         return;
     }
 
-    grid.innerHTML = moviesToRender.map((movie, index) => {
-        const originalIndex = myMovies.indexOf(movie);
+    grid.innerHTML = ''; // Clear existing content
+    const container = document.getElementById('movie-grid');
 
+    moviesToRender.forEach((movie, index) => {
         // 根据语言设置显示标题
         let titleDisplay = '';
         let titleEnDisplay = '';
@@ -510,45 +577,84 @@ function renderMovies() {
             titleDisplay = `${movie.titleCn} <span class="title-slash">/</span> <span class="title-en-alt">${movie.titleEn}</span>`;
         }
 
-        const trailerHtml = movie.trailerKey ? `
-            <div class="preview-player">
-                <button class="play-btn" onclick="event.stopPropagation(); playTrailer('${movie.trailerKey}', '${movie.titleCn}')">▶ 播放预告</button>
-            </div>
-        ` : '';
-
-        // 观看状态徽章
-        const statusBadge = getStatusBadge(movie.watchStatus);
-
         // 用户评分显示
         const userRatingHtml = movie.userRating > 0 ? `
             <div class="user-rating">❤️ ${movie.userRating.toFixed(1)}</div>
         ` : '';
 
-        return `
-        <div class="movie-card" onclick="openDetails(${movie.id}, ${originalIndex})">
-            <img src="${movie.poster}" alt="${movie.titleCn}" loading="lazy">
-            ${trailerHtml}
-            ${statusBadge}
-            <div class="info">
-                <div class="rating-row">
-                    <div class="rating">★ ${movie.rating.toFixed(1)}</div>
-                    ${userRatingHtml}
-                </div>
-                <h3>${titleDisplay}</h3>
-                ${titleEnDisplay}
-                <div class="release-year">📅 ${movie.releaseYear}</div>
-                ${movie.notes ? `<div class="has-notes">${t('hasNotesCard')}</div>` : ''}
-                <div class="card-actions">
-                    <button class="status-btn" onclick="event.stopPropagation(); toggleStatusMenu(${originalIndex})" title="${t('changeStatus')}">
-                        ${getStatusIcon(movie.watchStatus)}
-                    </button>
-                    <button class="note-btn" onclick="event.stopPropagation(); openNoteModal(${originalIndex})" title="${t('addNote')}">📝</button>
-                    <button class="delete-btn" onclick="event.stopPropagation(); deleteMovie(${originalIndex})" title="${t('clearData')}">✕</button>
+        const item = document.createElement('div');
+        item.className = 'movie-card-wrapper'; // 包裹层用于 3D 效果
+        const originalIndex = myMovies.indexOf(movie);
+
+        item.innerHTML = `
+            <div class="movie-card" data-index="${originalIndex}" onclick="openDetails(${movie.id}, ${originalIndex})">
+                <div class="card-shine"></div>
+                <img src="${movie.poster}" alt="${movie.titleCn}" loading="lazy">
+                ${getStatusBadge(movie.watchStatus)}
+                <div class="info">
+                    <div class="rating-row">
+                        <div class="rating">★ ${movie.rating.toFixed(1)}</div>
+                        ${userRatingHtml}
+                    </div>
+                    <h3>${titleDisplay}</h3>
+                    ${titleEnDisplay}
+                    <div class="release-year">📅 ${movie.releaseYear}</div>
+                    ${movie.notes ? `<div class="has-notes">${t('hasNotesCard')}</div>` : ''}
+                    <div class="card-actions">
+                        <button class="status-btn" onclick="event.stopPropagation(); toggleStatusMenu(${originalIndex})" title="${t('changeStatus')}">
+                            ${getStatusIcon(movie.watchStatus)}
+                        </button>
+                        <button class="note-btn" onclick="event.stopPropagation(); openNoteModal(${originalIndex})" title="${t('addNote')}">📝</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteMovie(${originalIndex})" title="${t('clearData')}">✕</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `}).join('');
+        `;
+        container.appendChild(item);
+    });
+
+    // 为新生成的卡片绑定 3D 效果
+    init3DEffects();
 }
+
+// 3D Parallax & Shine 效果
+function init3DEffects() {
+    const cards = document.querySelectorAll('.movie-card');
+    cards.forEach(card => {
+        card.onmousemove = (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = (centerY - y) / 10;
+            const rotateY = (x - centerX) / 10;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+
+            const shine = card.querySelector('.card-shine');
+            if (shine) {
+                const angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
+                shine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.2) 0%, transparent 80%)`;
+            }
+        };
+
+        card.onmouseleave = () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`;
+            const shine = card.querySelector('.card-shine');
+            if (shine) shine.style.background = 'transparent';
+        };
+    });
+}
+
+// 背景视差效果
+document.addEventListener('mousemove', (e) => {
+    const x = (window.innerWidth / 2 - e.clientX) / 50;
+    const y = (window.innerHeight / 2 - e.clientY) / 50;
+    document.body.style.backgroundPosition = `calc(50% + ${x}px) calc(50% + ${y}px)`;
+});
 
 function getStatusBadge(status) {
     const badges = {
@@ -1018,6 +1124,12 @@ function applyUIOpacity(opacity) {
     root.style.setProperty('--ui-opacity-3', baseOpacity3.toFixed(2));
     root.style.setProperty('--card-opacity', cardOpacity.toFixed(2));
     root.style.setProperty('--card-border-opacity', cardBorderOpacity.toFixed(2));
+
+    // 同步更新滑动条和文本显示
+    const slider = document.getElementById('opacitySlider');
+    const valueText = document.getElementById('opacityValue');
+    if (slider) slider.value = opacity;
+    if (valueText) valueText.textContent = opacity + '%';
 }
 
 // 导出/导入功能
